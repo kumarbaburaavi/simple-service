@@ -1,0 +1,8 @@
+{
+   "messageType": "EVENT",
+   "event": {
+      "time": "2024-04-12T13:45:30",
+      "device": "Device1",
+      "logType": "DEVICE_ASSIGNED"
+   }
+}

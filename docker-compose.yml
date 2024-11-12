@@ -1,0 +1,63 @@
+version: '3.8'
+
+services:
+
+  simple-log-service:
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    healthcheck:
+      test: curl --fail http://localhost:5010/actuator/health || exit 1
+      interval: 2s
+      timeout: 15s
+      retries: 10
+    image: simple-log-service:latest
+    environment:
+      SPRING_PROFILES_ACTIVE: "docker"
+      JAVA_TOOL_OPTIONS: |-
+        -agentlib:jdwp=transport=dt_socket,server=y,address=*:6007,suspend=n
+    ports:
+      - "5010:5010"
+      - "6007:6007"
+    depends_on:
+      simple-log-db:
+        condition: service_started
+      simple-log-redis:
+          condition: service_started
+    networks:
+      - iot-network
+
+  simple-log-db:
+    container_name: simple-log-db
+    image: postgres:16.2
+    environment:
+      POSTGRES_DB: simplelog
+      POSTGRES_USER: simpleloguser
+      POSTGRES_PASSWORD: password
+      PGDATA: /var/lib/postgresql/data
+    volumes:
+      - simplelog_database:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - iot-network
+
+  simple-log-redis:
+    container_name: simple-log-redis
+    image: redis:6.2-alpine
+    volumes:
+      - cache:/data
+    ports:
+      - "6379:6379"
+    command: redis-server --save 20 1
+    networks:
+      - iot-network
+
+networks:
+  iot-network:
+        name: iot-network
+
+volumes:
+  cache:
+    driver: local
+  simplelog_database:
